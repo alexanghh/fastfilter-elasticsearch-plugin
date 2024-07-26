@@ -29,6 +29,8 @@ import org.elasticsearch.script.*;
 import org.elasticsearch.script.FilterScript.LeafFactory;
 import org.elasticsearch.search.lookup.SearchLookup;
 import org.roaringbitmap.RoaringBitmap;
+import org.elasticsearch.logging.LogManager;
+import org.elasticsearch.logging.Logger;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -43,7 +45,9 @@ import java.util.Set;
  */
 public class FastFilterPlugin extends Plugin implements ScriptPlugin {
 
-	@Override
+    private static final Logger logger = LogManager.getLogger(FastFilterPlugin.class);
+
+    @Override
 	public ScriptEngine getScriptEngine(
 			Settings settings,
 			Collection<ScriptContext<?>> contexts
@@ -126,7 +130,9 @@ public class FastFilterPlugin extends Plugin implements ScriptPlugin {
 			private final boolean include;
 			private final boolean exclude;
 
-			private FastFilterLeafFactory(Map<String, Object> params, SearchLookup lookup, RoaringBitmap rBitmap) {
+            private static final Logger logger = LogManager.getLogger(FastFilterLeafFactory.class);
+
+            private FastFilterLeafFactory(Map<String, Object> params, SearchLookup lookup, RoaringBitmap rBitmap) {
 				if (!params.containsKey("field")) {
 					throw new IllegalArgumentException(
 							"Missing parameter [field]");
@@ -183,17 +189,22 @@ public class FastFilterPlugin extends Plugin implements ScriptPlugin {
 
 					@Override
 					public boolean execute() {
-						final int docVal;
 						try {
-							docVal = Math.toIntExact(docValues.nextValue());
+                            final int docValCnt = docValues.docValueCount();
+                            for (int i = 0; i < docValCnt; i++) {
+                                final int docVal = Math.toIntExact(docValues.nextValue());
+
+                                if (exclude && rBitmap.contains(docVal)) {
+                                    return false;
+                                }
+                                if (include && rBitmap.contains(docVal)) {
+                                    return true;
+                                }
+                            }
+                            return !include;
 						} catch (IOException e) {
 							throw ExceptionsHelper.convertToElastic(e);
 						}
-
-						if (exclude && rBitmap.contains(docVal)) {
-							return false;
-						}
-						else return !include || rBitmap.contains(docVal);
 					}
 				};
 			}
