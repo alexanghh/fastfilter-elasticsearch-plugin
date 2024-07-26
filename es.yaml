@@ -1,0 +1,17 @@
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: elastic
+spec:
+  version: 8.14.3
+  image: alexanghh/elasticsearch-roaringbitmap:8.14.3
+  nodeSets:
+    - name: default
+      count: 3
+      config:
+        node.store.allow_mmap: false
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              imagePullPolicy: Always
