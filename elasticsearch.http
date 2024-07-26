@@ -1,0 +1,55 @@
+PUT /test
+
+POST /test/_doc/10
+{
+  "body": { "important_field": "even less important!", "filter_id": [10] }
+}
+
+POST /test/_doc/20
+{
+  "id": 20,
+  "body": { "important_field": "foo foo foo", "filter_id": [20] }
+}
+POST /test/_doc/40
+{
+  "body": { "important_field": "foo foo", "filter_id": [40, 30] }
+}
+POST /test/_doc/41
+{
+  "body": { "important_field": "not that important", "filter_id": [41] }
+}
+
+POST /test/_doc/42
+{
+  "body": { "important_field": "even less important!", "filter_id": [42] }
+}
+
+GET /test/_search
+{
+  "query": {"match_all": {}}
+}
+
+
+GET /test/_search
+{
+  "query": {
+    "bool": {
+      "filter": {
+        "script": {
+          "script": {
+            "source": "fast_filter",
+            "lang": "fast_filter",
+            "params": {
+              "field": "body.filter_id",
+              "operation": "include",
+              "terms": "OjAAAAEAAAAAAAIAEAAAAAoAFAAjAA=="
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+DELETE /test
