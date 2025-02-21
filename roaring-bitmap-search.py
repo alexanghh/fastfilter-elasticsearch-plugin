@@ -57,7 +57,7 @@ def query_test(bm = BitMap([1])):
                 "source": "fast_filter",
                 "lang": "fast_filter",
                 "params": {
-                  "field": "body.filter_id",
+                  "field": "body.filter_id.keyword",
                   "operation": "include",
                   "type": "string",
                   "terms": terms_encoded
@@ -71,6 +71,22 @@ def query_test(bm = BitMap([1])):
   )
   resp2 = ast.literal_eval(str(result))
   print(json.dumps(resp2, indent=2, sort_keys=True))
+
+
+def java_string_hashcode(s):
+    """
+    Simulates Java's String.hashCode() method in Python.
+
+    Args:
+        s: The input string.
+
+    Returns:
+        The Java-style hash code as an integer.
+    """
+    h = 0
+    for char in s:
+        h = (h * 31 + ord(char)) & 0xFFFFFFFF  # Simulate 32-bit integer overflow
+    return h
 
 
 def query_1k():
@@ -91,10 +107,20 @@ def query(query_size=1000000):
     bm.add(i)
   query_test(bm)
 
-
+def gen(array):
+  bm = BitMap()
+  values = array.split(",")
+  for v in values:
+    print("adding: {}, {}".format(v, java_string_hashcode(v)))
+    bm.add(java_string_hashcode(v))
+  terms_bytes = base64.b64encode(BitMap.serialize(bm))
+  terms_encoded = terms_bytes.decode()
+  print(terms_bytes)
 
 parser = argparse.ArgumentParser(description='ES roaring bitmap test.')
 group = parser.add_mutually_exclusive_group(required=True)
+group.add_argument('-g', '--gen', dest='array', required=False, type=str,
+                    help='generate bitmap, param=comma separated values')
 group.add_argument('-l', '--load', action='store_true',
                     help='load data to ES index')
 group.add_argument('-q' , '--query', action='store_true',
@@ -106,14 +132,18 @@ if __name__ == "__main__":
   args = parser.parse_args()
   print(args)
 
-  if not args.load and not args.query:
+  if not args.load and not args.query and not args.array:
     parser.print_help()
     quit()
   
   es = Elasticsearch("https://localhost:9200/",
-                     api_key="a0RrOC1wQUJHUHdSQXZUd09XVkg6MzBtZ3FJSnRSRS1Ma0JFZGtGZlJkZw==",
+                     api_key="MFc1SC1wQUJzakExY0xSTVo3Z3U6OUVoVlRvMmZSU2FTdG5jSEtLbVNYQQ==",
                      verify_certs=False,
                      request_timeout=600)
+
+  if args.array:
+    gen(args.array)
+    quit()
 
   if args.load:
     if args.size:
