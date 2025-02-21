@@ -6,6 +6,8 @@ This filter plugin uses RoaringBitmap to allow efficient filtering with hundreds
 Read more here: https://luis-sena.medium.com/improve-elasticsearch-filtering-performance-10x-using-this-plugin-8c6485516c1a
 
 
+> **_NOTE:_**  Added type parameter to additionaly support string (int) and hashed (non numeric) filters on top of the existing int filter.
+
 Installation
 ------------
 
@@ -19,6 +21,12 @@ You need to choose the correct plugin version to match your ES version (you can 
 To install from sources (master branch), run:
 
     gradle clean build
+
+> **_NOTE:_**  Make sure you have the correct version of jdk installed as specified in the build.gradle file. Otherwise, you might get an error like:
+> ```
+> java.lang.RuntimeException: unable to install test security manager
+> ```
+
 
 then install with (use full path):
 
@@ -96,6 +104,7 @@ if __name__ == "__main__":
                     "params": {
                       "field": "_id",
                       "operation": "include",
+                      "type": "int",
                       "terms": base64.b64encode(BitMap.serialize(bm))
                     }
                   }

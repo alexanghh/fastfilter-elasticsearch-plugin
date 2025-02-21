@@ -111,7 +111,7 @@ public class FastFilterPlugin extends Plugin implements ScriptPlugin {
 					) {
 				final byte[] decodedTerms = Base64.getDecoder().decode(params.get("terms").toString());
 				final ByteBuffer buffer = ByteBuffer.wrap(decodedTerms);
-				final String type = params.get("type").toString();
+				final String type = params.getOrDefault("type", "int").toString();
 				RoaringBitmap rBitmap = new RoaringBitmap();
 				try {
 					rBitmap.deserialize(buffer);
@@ -120,7 +120,11 @@ public class FastFilterPlugin extends Plugin implements ScriptPlugin {
 					// Do something here
 					throw ExceptionsHelper.convertToElastic(e);
 				}
-				if (type.equalsIgnoreCase("string")) {
+				if (type.equalsIgnoreCase("hashed")) {
+					logger.debug("init hashed string filter");
+					return new FastFilterHashedLeafFactory(params, lookup, rBitmap);
+				}
+				else if (type.equalsIgnoreCase("string")) {
 					logger.debug("init string filter");
 					return new FastFilterStringLeafFactory(params, lookup, rBitmap);
 				}
@@ -128,6 +132,80 @@ public class FastFilterPlugin extends Plugin implements ScriptPlugin {
 					logger.debug("init int filter");
 					return new FastFilterIntLeafFactory(params, lookup, rBitmap);
 				}
+			}
+		}
+
+
+		/**
+		 * filter field is string type and hashed
+		 */
+		private static class FastFilterHashedLeafFactory implements LeafFactory {
+			private final Map<String, Object> params;
+			private final SearchLookup lookup;
+			private final String fieldName;
+			private final String opType;
+			private final RoaringBitmap rBitmap;
+			private final boolean include;
+			private final boolean exclude;
+
+            private static final Logger logger = LogManager.getLogger(FastFilterStringLeafFactory.class);
+
+            private FastFilterHashedLeafFactory(Map<String, Object> params, SearchLookup lookup, RoaringBitmap rBitmap) {
+				if (!params.containsKey("field")) {
+					throw new IllegalArgumentException(
+							"Missing parameter [field]");
+				}
+				if (!params.containsKey("terms")) {
+					throw new IllegalArgumentException(
+							"Missing parameter [terms]");
+				}
+				this.params = params;
+				this.lookup = lookup;
+				this.rBitmap = rBitmap;
+				opType = params.get("operation").toString();
+				fieldName = params.get("field").toString();
+				include = opType.equals("include");
+				exclude = !include;
+			}
+
+
+			@Override
+			public FilterScript newInstance(DocReader docReader)
+					throws IOException {
+
+				return new FilterScript(params, lookup, docReader) {
+
+					@Override
+					public boolean execute() {
+						try {
+							logger.debug("retrieving doc values");
+
+							final ScriptDocValues.Strings docValues = 
+								(ScriptDocValues.Strings)getDoc().get(fieldName);
+                            final int docValCnt = docValues.size();
+							logger.debug("string docValCnt: " + docValCnt);
+
+                            for (int i = 0; i < docValCnt; i++) {
+                                logger.debug("orig string: " + docValues.get(i));
+                                final int docVal = docValues.get(i).hashCode();
+								logger.debug("checking hashed docval: " + docVal);
+
+                                if (exclude && rBitmap.contains(docVal)) {
+									logger.debug("exclude hashed match: " + docVal);
+                                    return false;
+                                }
+                                if (include && rBitmap.contains(docVal)) {
+									logger.debug("include hashed match: " + docVal);
+                                    return true;
+                                }
+                            }
+                            return !include;
+						}
+						catch (NumberFormatException e) {
+							throw ExceptionsHelper.convertToElastic(e);
+						}
+					}
+				};
 			}
 		}
 
