@@ -3,8 +3,8 @@ kind: Elasticsearch
 metadata:
   name: elastic
 spec:
-  version: 8.14.3
-  image: alexanghh/elasticsearch-roaringbitmap:8.14.3
+  version: 8.5.0
+  image: alexanghh/elasticsearch-roaringbitmap:8.5.0
   nodeSets:
     - name: default
       count: 3
