@@ -1,0 +1,9 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven {
+            url 'https://artifacts.elastic.co/maven'
+        }
+    }
+}
+rootProject.name = 'fastfilter-elasticsearch-plugin'
