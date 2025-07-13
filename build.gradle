@@ -1,18 +1,30 @@
-//import org.elasticsearch.gradle.internal.info.BuildParams
-/*
- * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
- * or more contributor license agreements. Licensed under the Elastic License
- * 2.0 and the Server Side Public License, v 1; you may not use this file except
- * in compliance with, at your election, the Elastic License 2.0 or the Server
- * Side Public License, v 1.
- */
+buildscript {
+    repositories {
+        mavenCentral()
+        maven { url 'https://artifacts.elastic.co/maven' }
+    }
+    dependencies {
+        classpath "org.elasticsearch.gradle:build-tools:8.5.0"
+    }
+}
+
+apply plugin: 'java'
 apply plugin: 'elasticsearch.esplugin'
 apply plugin: 'elasticsearch.yaml-rest-test'
-//apply plugin: 'elasticsearch.legacy-yaml-rest-test'
-//apply plugin: 'elasticsearch.legacy-yaml-rest-compat-test'
 
-// This plugin only has yaml rest tests
-test.enabled = false
+group = 'org.elasticsearch.lsena'
+version = '8.5.0'
+
+repositories {
+    mavenCentral()
+    maven { url 'https://artifacts.elastic.co/maven' }
+}
+
+dependencies {
+    implementation 'org.elasticsearch:elasticsearch:8.5.0'
+    implementation 'org.roaringbitmap:RoaringBitmap:0.9.35'
+    yamlRestTestRuntimeOnly "org.apache.logging.log4j:log4j-core:1.2.17"
+}
 
 esplugin {
     name 'fastfilter-elasticsearch-plugin'
@@ -20,9 +32,4 @@ esplugin {
     classname 'org.elasticsearch.lsena.fastfilter.FastFilterPlugin'
     licenseFile rootProject.file("LICENSE.txt")
     noticeFile rootProject.file("NOTICE.txt")
-
-}
-
-dependencies {
-    implementation 'org.roaringbitmap:RoaringBitmap:0.9.35'
 }
