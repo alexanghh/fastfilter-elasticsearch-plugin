@@ -4,7 +4,7 @@ buildscript {
         maven { url 'https://artifacts.elastic.co/maven' }
     }
     dependencies {
-        classpath "org.elasticsearch.gradle:build-tools:8.5.0"
+        classpath "org.elasticsearch.gradle:build-tools:9.0.3"
     }
 }
 
@@ -13,7 +13,7 @@ apply plugin: 'elasticsearch.esplugin'
 apply plugin: 'elasticsearch.yaml-rest-test'
 
 group = 'org.elasticsearch.lsena'
-version = '8.5.0'
+version = '9.0.3'
 
 repositories {
     mavenCentral()
@@ -21,7 +21,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.elasticsearch:elasticsearch:8.5.0'
+    implementation 'org.elasticsearch:elasticsearch:9.0.3'
     implementation 'org.roaringbitmap:RoaringBitmap:0.9.35'
     yamlRestTestRuntimeOnly "org.apache.logging.log4j:log4j-core:1.2.17"
 }
